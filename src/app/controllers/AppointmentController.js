@@ -1,9 +1,11 @@
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import * as yup from 'yup';
-import { startOfHour, parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
+import { startOfHour, parseISO, isBefore, endOfDay, startOfDay, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
 import File from '../models/File';
 import { Op } from 'sequelize';
+import Notification from '../schemas/notification';
 
 class AppointmentController {
   async getAll(req, res) {
@@ -96,7 +98,6 @@ class AppointmentController {
     }
 
     const hourStart = startOfHour(parseISO(date));
-    console.log(date, parseISO(date), hourStart);
 
     if (isBefore(hourStart, new Date())) {
       return res.status(400).json({ error: 'Past date are not permitted' });
@@ -118,6 +119,14 @@ class AppointmentController {
       user_id: req.userId,
       provider_id,
       date,
+    });
+
+    const user = await User.findByPk(req.userId);
+    const formattedDate = format(hourStart, "'dia' dd 'de' MMMM', as' H:mm'h'", { locale: pt });
+
+    await Notification.create({
+      content: `Novo agendamento de ${user.name} para ${formattedDate}`,
+      user: provider_id,
     });
 
     return res.json(appointment);
