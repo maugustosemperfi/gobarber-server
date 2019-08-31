@@ -22,5 +22,6 @@ routes.get('/providers', ProviderController.getAll);
 
 routes.post('/appointments', AppointmentController.store);
 routes.get('/appointments', AppointmentController.getAll);
+routes.get('/appointments/provider', AppointmentController.getAllByProvider);
 
 export default routes;

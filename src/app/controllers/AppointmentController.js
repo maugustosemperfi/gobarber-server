@@ -1,10 +1,80 @@
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import * as yup from 'yup';
-import { startOfHour, parseISO, isBefore } from 'date-fns';
+import { startOfHour, parseISO, isBefore, endOfDay, startOfDay } from 'date-fns';
 import File from '../models/File';
+import { Op } from 'sequelize';
 
 class AppointmentController {
+  async getAll(req, res) {
+    const { page, size } = req.query;
+    const appointments = await Appointment.findAll({
+      where: { user_id: req.userId, canceled_at: null },
+      order: ['date'],
+      attributes: ['id', 'date'],
+      limit: size,
+      offset: (page - 1) * size,
+      include: [
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['id', 'name'],
+          include: [
+            {
+              model: File,
+              as: 'avatar',
+              attributes: ['id', 'path', 'url'],
+            },
+          ],
+        },
+      ],
+    });
+
+    return res.json(appointments);
+  }
+
+  async getAllByProvider(req, res) {
+    const checkUserProvider = await User.findOne({
+      where: { id: req.userId, provider: true },
+    });
+
+    if (!checkUserProvider) {
+      return res.status(401).json({ error: 'User is not a provider' });
+    }
+
+    const { page, size, date } = req.query;
+    const parsedDate = parseISO(date);
+    const appointments = await Appointment.findAll({
+      where: {
+        provider_id: req.userId,
+        canceled_at: null,
+        date: {
+          [Op.between]: [startOfDay(parsedDate), endOfDay(parsedDate)],
+        },
+      },
+      order: ['date'],
+      attributes: ['id', 'date'],
+      limit: size,
+      offset: (page - 1) * size,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name'],
+          include: [
+            {
+              model: File,
+              as: 'avatar',
+              attributes: ['id', 'path', 'url'],
+            },
+          ],
+        },
+      ],
+    });
+
+    return res.json(appointments);
+  }
+
   async store(req, res) {
     const schema = yup.object().shape({
       date: yup.date().required(),
@@ -51,30 +121,6 @@ class AppointmentController {
     });
 
     return res.json(appointment);
-  }
-
-  async getAll(req, res) {
-    const appointments = await Appointment.findAll({
-      where: { user_id: req.userId, canceled_at: null },
-      order: ['date'],
-      attributes: ['id', 'date'],
-      include: [
-        {
-          model: User,
-          as: 'provider',
-          attributes: ['id', 'name'],
-          include: [
-            {
-              model: File,
-              as: 'avatar',
-              attributes: ['id', 'path', 'url'],
-            },
-          ],
-        },
-      ],
-    });
-
-    return res.json(appointments);
   }
 }
 
