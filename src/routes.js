@@ -21,5 +21,6 @@ routes.post('/files', upload.single('file'), FileController.store);
 routes.get('/providers', ProviderController.getAll);
 
 routes.post('/appointments', AppointmentController.store);
+routes.get('/appointments', AppointmentController.getAll);
 
 export default routes;
