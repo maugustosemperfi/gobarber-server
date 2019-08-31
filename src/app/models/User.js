@@ -1,4 +1,6 @@
 import Sequelize, { Model } from 'sequelize';
+import File from './File';
+
 import bcrypt from 'bcryptjs';
 
 class User extends Model {
@@ -26,6 +28,10 @@ class User extends Model {
 
   checkPassword(password) {
     return bcrypt.compare(password, this.password);
+  }
+
+  static associate(models) {
+    this.belongsTo(models.File, { foreignKey: 'avatar_id' });
   }
 }
 

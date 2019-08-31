@@ -54,7 +54,7 @@ class UserController {
 
     const user = await User.findByPk(id);
 
-    if (email !== user.email) {
+    if (email && email !== user.email) {
       const userExists = await User.findOne({ where: { email } });
       if (userExists) {
         return res.status(400).json({ error: 'E-mail already registered' });
@@ -64,6 +64,7 @@ class UserController {
     if (oldPassword && !(await user.checkPassword(oldPassword))) {
       return res.status(400).json({ error: 'Password does not match' });
     }
+
 
     const { provider } = await user.update(req.body);
 
