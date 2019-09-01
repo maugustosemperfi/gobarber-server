@@ -5,7 +5,7 @@ import { startOfHour, parseISO, isBefore, endOfDay, startOfDay, format } from 'd
 import pt from 'date-fns/locale/pt';
 import File from '../models/File';
 import { Op } from 'sequelize';
-import Notification from '../schemas/notification';
+import Notification from '../schemas/Notification';
 
 class AppointmentController {
   async getAll(req, res) {
