@@ -24,6 +24,7 @@ routes.get('/providers', ProviderController.getAll);
 routes.post('/appointments', AppointmentController.store);
 routes.get('/appointments', AppointmentController.getAll);
 routes.get('/appointments/provider', AppointmentController.getAllByProvider);
+routes.delete('/appointments/:id', AppointmentController.delete);
 routes.get('/notifications', NotificationController.getAll);
 routes.put('/notifications/:id', NotificationController.update);
 
