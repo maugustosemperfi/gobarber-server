@@ -1,12 +1,13 @@
-import Appointment from '../models/Appointment';
-import User from '../models/User';
-import * as yup from 'yup';
-import { startOfHour, parseISO, isBefore, endOfDay, startOfDay, format, subHours } from 'date-fns';
+import { endOfDay, format, isBefore, parseISO, startOfDay, startOfHour, subHours } from 'date-fns';
 import pt from 'date-fns/locale/pt';
-import File from '../models/File';
 import { Op } from 'sequelize';
+import * as yup from 'yup';
+import Appointment from '../models/Appointment';
+import File from '../models/File';
+import User from '../models/User';
 import Notification from '../schemas/Notification';
-import Mail from '../../lib/Mail';
+import Queue from '../../lib/Queue';
+import CancellationMail from '../jobs/CancellationMail';
 
 class AppointmentController {
   async getAll(req, res) {
@@ -162,11 +163,7 @@ class AppointmentController {
 
     await appointment.save();
 
-    await Mail.sendMail({
-      to: `${appointment.provider.name} <${appointment.provider.email}>`,
-      subject: 'Agendamento cancelado',
-      text: 'Um agendamento foi cancelado',
-    });
+    Queue.add(CancellationMail.key, { appointment });
 
     return res.json(appointment);
   }
