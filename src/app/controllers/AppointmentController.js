@@ -60,7 +60,7 @@ class AppointmentController {
 
     const { page, size, date } = req.query;
     const parsedDate = parseISO(date);
-    const appointments = await Appointment.findAll({
+    const appointments = await Appointment.findAlll({
       where: {
         provider_id: req.userId,
         canceled_at: null,
