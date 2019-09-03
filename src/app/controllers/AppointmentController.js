@@ -1,4 +1,16 @@
-import { endOfDay, format, isBefore, parseISO, startOfDay, startOfHour, subHours } from 'date-fns';
+import {
+  endOfDay,
+  format,
+  isBefore,
+  parseISO,
+  startOfDay,
+  startOfHour,
+  subHours,
+  setHours,
+  setMinutes,
+  setSeconds,
+  isAfter,
+} from 'date-fns';
 import pt from 'date-fns/locale/pt';
 import { Op } from 'sequelize';
 import * as yup from 'yup';
@@ -15,7 +27,7 @@ class AppointmentController {
     const appointments = await Appointment.findAll({
       where: { user_id: req.userId, canceled_at: null },
       order: ['date'],
-      attributes: ['id', 'date'],
+      attributes: ['id', 'date', 'past', 'cancelable'],
       limit: size,
       offset: (page - 1) * size,
       include: [
@@ -57,7 +69,7 @@ class AppointmentController {
         },
       },
       order: ['date'],
-      attributes: ['id', 'date'],
+      attributes: ['id', 'date', 'past', 'cancelable'],
       limit: size,
       offset: (page - 1) * size,
       include: [
@@ -166,6 +178,41 @@ class AppointmentController {
     Queue.add(CancellationMail.key, { appointment });
 
     return res.json(appointment);
+  }
+
+  async availableAppointments(req, res) {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.send(400).json({ error: 'Invalid date' });
+    }
+
+    const searchDate = Number(date);
+
+    const appointments = await Appointment.findAll({
+      where: {
+        provider_id: req.params.providerId,
+        canceled_at: null,
+        date: {
+          [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+        },
+      },
+    });
+
+    const schedule = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+
+    const available = schedule.map(time => {
+      const [hours, minutes] = time.split(':');
+      const value = setSeconds(setMinutes(setHours(searchDate, hours), minutes), 0);
+
+      return {
+        time,
+        value: format(value, "yyyy-MM-dd'T'HH:mm:ssxxx"),
+        available: isAfter(value, new Date()) && !appointments.find(a => format(a.date, 'HH:mm') === time),
+      };
+    });
+
+    return res.json(available);
   }
 }
 
